@@ -211,35 +211,200 @@ include /etc/nginx/conf.d/*.conf;
 ```
 /etc/nginx/conf.d/default.conf
 ```
-# STREAMING - Cache Version 2.0
 
-worker_processes  auto;
-error_log  /var/log/nginx/error.log debug;
-events {
-worker_connections  1024;
+# START SERVER BLOCK for all streaming VOD and live streaming traffic requests.
+server {
+        listen 80;
+		listen 443 ssl;
+        server_name *.<HOST NAME>;
+# SERVE CROSSDOMAIN 
+location / {
+#add_header "Access-Control-Allow-Origin" "*";
+        
+#ALL XML REQUESTS WILL BE SERVED FROM THE CACHES HTTP FOLDER
+location ~* .(xml)$ {
+        root	/usr/share/nginx/html;
+        add_header "X-Hls-Cache-Status" "Cross Domain XML File";
 }
+# END XML FILE LOCATION
 
-
-# START HTTP BLOCK
-http {
-server_names_hash_bucket_size  128;
-include       mime.types;
-default_type  application/octet-stream;
-directio 10m;
-
-# START LOG FORMATTING
-log_format upstream_time '$remote_addr - $remote_user [$time_local] ' '"$request" $status $body_bytes_sent ' '"$http_referer" "$http_user_agent"' 'rt=$request_time uct="$upstream_connect_time" uht="$upstream_header_time status="$upstream_cache_status" urt="$upstream_response_time"';
-# END LOG FORMATTING
-
-
-# START CACHING VARIABLES
-proxy_cache_path /usr/share/nginx/cache levels=1:2 keys_zone=hls-test1-cache:200m max_size=1000m inactive=600m;
-client_body_temp_path /spool 1 2;
-client_body_buffer_size 16k;
-# END CACHING VARIABLES
-
-include /etc/nginx/conf.d/*.conf;
+#####VOD#####.
+# START LOCATION CDN VOD
+location ~* /(au|br|ie|jp|sg|us)/ {
+# START M3U8 VOD
+location ~* .(m3u8)$ {
+        resolver 8.8.8.8;
+        proxy_pass $scheme://<VOD origin host>$uri$is_args$args;
+       	proxy_cache hls-test1-cache;
+        proxy_cache_valid 200 10s;
+		add_header X-Proxy-Cache $upstream_cache_status;
+        add_header "Who did it hit?" "streaming VOD Cached M3U8 on Cache"; 
+  }
+  # END M3U8 VOD
+  
+  #START TS VOD
+location ~* .(ts|trp)$ {
+		resolver 8.8.8.8;
+        proxy_pass $scheme://<VOD origin host>$uri$is_args$args;
+       	proxy_cache hls-test1-cache;
+        proxy_cache_valid 200 7d;
+		add_header X-Proxy-Cache $upstream_cache_status;
+        add_header "Who did it hit?" "streaming VOD Cached M3U8 on Cache"; 
+		proxy_ignore_headers Cache-Control;
+        #proxy_ignore_headers Set-Cookie;
+		proxy_ignore_headers "Expires";
+		proxy_hide_header "Expires"; 
+		proxy_hide_header "Cache-Control";
+		proxy_hide_header "Set-Cookie";
 }
-# END HTTP BLOCK
+location ~* .(aac)$ {
+        resolver 8.8.8.8;
+        proxy_pass $scheme://<VOD origin host>$uri$is_args$args;
+       	proxy_cache hls-test1-cache;
+        proxy_cache_valid 200 7d;
+		add_header X-Proxy-Cache $upstream_cache_status;
+        add_header "Who did it hit?" "streaming VOD Cached M3U8 on Cache"; 
+  }
+location ~* .(mp4)$ {
+        resolver 8.8.8.8;
+        proxy_pass $scheme://<VOD origin host>$uri$is_args$args;
+       	proxy_cache hls-test1-cache;
+        proxy_cache_valid 200 7d;
+		add_header X-Proxy-Cache $upstream_cache_status;
+        add_header "Who did it hit?" "streaming VOD Cached M3U8 on Cache"; 
+  }
+# END streaming VOD TS FILE LOCATION
+}
+}
+# END streaming ROOT LOCATION 
+####VOD#####
+
+
+####LIVE#####
+#START LIVE LOCATION IDENTIFIER FOLDER
+location /i/ {
+
+# START LIVE M3U8 FILE LOCATION
+location ~* .(m3u8)$ {
+		proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        resolver 8.8.8.8;
+        proxy_pass $scheme://<live origin host>$uri$is_args$args;
+        proxy_cache hls-test1-cache;
+        proxy_cache_valid 200 9s;
+        #proxy_cache_valid 404 5s; 
+        proxy_set_header     Host $host; 
+        proxy_ignore_headers Cache-Control;
+        proxy_ignore_headers Set-Cookie;
+		proxy_ignore_headers "Expires";
+		proxy_hide_header "Expires"; 
+		proxy_hide_header "Cache-Control";
+		proxy_hide_header "Set-Cookie";
+        proxy_cache_key $scheme$proxy_host$request_uri;
+        #proxy_cache_lock on;
+        #proxy_cache_lock_age 10s;
+        proxy_cache_use_stale updating;
+        proxy_ignore_client_abort on;
+        add_header X-Proxy-Cache $upstream_cache_status;
+        add_header "X-Hls-Cache-Status" "streaming Live Cached M3U8 on Cache"; 
+ 
+}
+# END LIVE M3U8 FILE LOCATION
+
+# START streaming LIVE TS FILE LOCATION
+location ~* .(ts|trp)$ {
+		proxy_http_version 1.1;
+        proxy_set_header Connection "";
+	    resolver 8.8.8.8;
+        proxy_pass $scheme://<live origin host>$uri$is_args$args;
+        proxy_cache hls-test1-cache;
+        proxy_cache_valid 200 1m;
+	    proxy_buffering on;
+	    proxy_buffers 16 640k;
+	    proxy_busy_buffers_size 9m;
+	    proxy_buffer_size 9m;
+        proxy_set_header     Host $host; 
+        proxy_ignore_headers "Cache-Control";
+		proxy_ignore_headers "Set-Cookie";
+		proxy_ignore_headers "Expires";
+		proxy_hide_header "Expires"; 
+		proxy_hide_header "Cache-Control";
+		proxy_hide_header "Pragma"; 
+	    proxy_hide_header "Set-Cookie";
+	    proxy_cache_key $scheme$proxy_host$request_uri;
+	    #proxy_cache_lock on;
+	    #proxy_cache_lock_age 60s;
+        proxy_ignore_client_abort on;
+	    proxy_cache_use_stale updating;
+        proxy_cache_revalidate on;
+	    add_header X-Proxy-Cache $upstream_cache_status;
+        add_header "X-Hls-Cache-Status" "streaming Live Cached TS on Cache";  
+}
+# END streaming LIVE TS FILE LOCATION
+}
+# END LIVE SERVER BLOCK
+location /live/ {
+
+# START LIVE M3U8 FILE LOCATION
+location ~* .(mpd)$ {
+		proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        resolver 8.8.8.8;
+        proxy_pass $scheme://<live origin host>$uri$is_args$args;
+        proxy_cache hls-test1-cache;
+        proxy_cache_valid 200 9s;
+        #proxy_cache_valid 404 5s; 
+        proxy_set_header     Host $host; 
+        proxy_ignore_headers Cache-Control;
+        proxy_ignore_headers Set-Cookie;
+		proxy_ignore_headers "Expires";
+		proxy_hide_header "Expires"; 
+		proxy_hide_header "Cache-Control";
+		proxy_hide_header "Set-Cookie";
+        proxy_cache_key $scheme$proxy_host$request_uri;
+        #proxy_cache_lock on;
+        #proxy_cache_lock_age 10s;
+        proxy_cache_use_stale updating;
+        proxy_ignore_client_abort on;
+        add_header X-Proxy-Cache $upstream_cache_status;
+        add_header "X-Hls-Cache-Status" "streaming Live Cached M3U8 on Cache"; 
+ 
+}
+# END LIVE M3U8 FILE LOCATION
+
+# START streaming LIVE TS FILE LOCATION
+location ~* .(m4s)$ {
+		proxy_http_version 1.1;
+        proxy_set_header Connection "";
+	    resolver 8.8.8.8;
+        proxy_pass $scheme://<live origin host>$uri$is_args$args;
+        proxy_cache hls-test1-cache;
+        proxy_cache_valid 200 1m;
+	    proxy_buffering on;
+	    proxy_buffers 16 640k;
+	    proxy_busy_buffers_size 9m;
+	    proxy_buffer_size 9m;
+        proxy_set_header     Host $host; 
+        proxy_ignore_headers "Cache-Control";
+		proxy_ignore_headers "Set-Cookie";
+		proxy_ignore_headers "Expires";
+		proxy_hide_header "Expires"; 
+		proxy_hide_header "Cache-Control";
+		proxy_hide_header "Pragma"; 
+	    proxy_hide_header "Set-Cookie";
+	    proxy_cache_key $scheme$proxy_host$request_uri;
+	    #proxy_cache_lock on;
+	    #proxy_cache_lock_age 60s;
+        proxy_ignore_client_abort on;
+	    proxy_cache_use_stale updating;
+        proxy_cache_revalidate on;
+	    add_header X-Proxy-Cache $upstream_cache_status;
+        add_header "X-Hls-Cache-Status" "streaming Live Cached TS on Cache";  
+}
+# END streaming LIVE TS FILE LOCATION
+}
+# END LIVE SERVER BLOCK
+}
+# END  SERVER BLOCK
 
 ```

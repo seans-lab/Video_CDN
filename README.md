@@ -209,3 +209,37 @@ include /etc/nginx/conf.d/*.conf;
 # END HTTP BLOCK
 
 ```
+/etc/nginx/conf.d/default.conf
+```
+# STREAMING - Cache Version 2.0
+
+worker_processes  auto;
+error_log  /var/log/nginx/error.log debug;
+events {
+worker_connections  1024;
+}
+
+
+# START HTTP BLOCK
+http {
+server_names_hash_bucket_size  128;
+include       mime.types;
+default_type  application/octet-stream;
+directio 10m;
+
+# START LOG FORMATTING
+log_format upstream_time '$remote_addr - $remote_user [$time_local] ' '"$request" $status $body_bytes_sent ' '"$http_referer" "$http_user_agent"' 'rt=$request_time uct="$upstream_connect_time" uht="$upstream_header_time status="$upstream_cache_status" urt="$upstream_response_time"';
+# END LOG FORMATTING
+
+
+# START CACHING VARIABLES
+proxy_cache_path /usr/share/nginx/cache levels=1:2 keys_zone=hls-test1-cache:200m max_size=1000m inactive=600m;
+client_body_temp_path /spool 1 2;
+client_body_buffer_size 16k;
+# END CACHING VARIABLES
+
+include /etc/nginx/conf.d/*.conf;
+}
+# END HTTP BLOCK
+
+```

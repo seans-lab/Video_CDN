@@ -1,4 +1,4 @@
-# Video_CDN
+# Video CDN
 
 NGINX has the ability to deliver Live and VOD streams across an enterprise network or as a global CDN with the following configurations.
 

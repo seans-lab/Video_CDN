@@ -102,5 +102,34 @@ return 301 http://<load balancer host location B>$request_uri; }
 ## Load Balancer
 The load balancer will proxy the connections to the back end servers.
 
+/etc/nginx/nginx.conf
+```
+#STREAMING - Load Balancer - LOCATION A V2.0
+worker_processes  auto;
+events {
+    worker_connections  20000;
+}
+
+# START HTTP BLOCK
+http {
+log_format upstream_time '$remote_addr - $remote_user [$time_local] ' '"$request" $status $body_bytes_sent ' '"$http_referer" "$http_user_agent"' 'rt=$request_time uct="$upstream_connect_time" uht="$upstream_header_time status="$upstream_cache_status" urt="$upstream_response_time"';
+#gzip on;
+#gzip_comp_level 9;
+
+# START UPSTREAM BACKEND VARIABLES
+upstream backend {
+        #ip_hash;
+        #least_conn;
+        server 10.0.0.201:80 weight=100;
+       	server 10.0.0.202:80 weight=100;
+		keepalive 64;
+}
+# END UPSTREAM BACKEND VARIABLES
+include /etc/nginx/conf.d/*.conf;
+}
+# END HTTP BLOCK
+
+```
+
 ## Cache
 The  cache is in place to deliver the content from memory or fetch content from the origin server if the content has not yet been cached and load it into the cache according to the caching rules applied.

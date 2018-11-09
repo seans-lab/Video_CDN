@@ -17,6 +17,8 @@ For an on premise implementation of this solution, a streaming media server for 
 
 ## Redirector
 The purpose of the redirector is to provide a central point to resolve requests for the video stream, live or on-demand, and redirect the session to the server allocated to serve content to the users IP range.
+
+/etc/nginx/nginx.conf
 ```
 # STREAMING - Redirector V1.8
 worker_processes  2;
@@ -52,6 +54,47 @@ client_body_buffer_size 16k;
 # END CACHING VARIABLES
 
 include /etc/nginx/conf.d/*.conf;
+}
+
+```
+
+/etc/nginx/conf.d/default.conf
+
+```
+
+server{
+listen 80;
+listen 443 ssl;
+server_name *.<redirector host name> ;
+ # START CERTIFICATE CHAINS
+        #ssl on;
+        ssl_certificate         /etc/nginx/ssl/<certificate name>.crt;
+        ssl_certificate_key     /etc/nginx/ssl/<certificate key name>.key;
+       	ssl_trusted_certificate /etc/nginx/ssl/<ca cert name>.crt;
+       	ssl_session_cache shared:SSL:10m;
+       	ssl_session_timeout 5m;
+      	ssl_prefer_server_ciphers       on;
+       	ssl_protocols                   TLSv1 TLSv1.1 TLSv1.2;
+       	ssl_ciphers                     ECDH+AESGCM:DH+AESGCM:ECDH+AES256:DH+AES256:ECDH+AES128:DH+AES:ECDH+3DES:DH+3DES:RSA+AESGCM:RSA+AES:RSA+3DES:!aNULL:!MD5:!DSS;
+        # START CERTIFICATE CHAINS
+location / {
+add_header "Who_did_it_hit" "Director";
+add_header "Access-Control-Allow-Origin" "*";
+location ~* .(xml)$ {
+        root	/usr/share/nginx/html;
+        add_header "X-Hls-Cache-Status" "Cross Domain XML File";
+}
+
+if ($location_A)
+{  
+
+return 301 http://<oad balancer host location A>$request_uri;
+}
+if ($location_B)
+{  
+return 301 http://<load balancer host location B>$request_uri; }
+
+}
 }
 
 ```

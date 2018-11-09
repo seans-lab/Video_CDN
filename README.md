@@ -18,43 +18,34 @@ For an on premise implementation of this solution, a streaming media server for 
 ## Redirector
 The purpose of the redirector is to provide a central point to resolve requests for the video stream, live or on-demand, and redirect the session to the server allocated to serve content to the users IP range.
 
-`# STREAMING - Redirector V1.8
-worker_processes  2;
-worker_rlimit_nofile 30000;
-events {
-    worker_connections  200000;
+`# STREAMING - Redirector V1.8`
+`worker_processes  2;`
+`worker_rlimit_nofile 30000;`
+`events {`
+    `worker_connections  200000;`
+`}
+`# START HTTP BLOCK`
+`http {`
+`server_names_hash_bucket_size  128;`
+`include       mime.types;`
+`default_type  application/octet-stream;`
+`#SET THE IP ADDRESS RANGE OF THE LOCATION TO BE REDIRECTED FOR LOCATION A`
+`geo $location _A`
+`{ default 0; 10.0.0.0/24 1;}`
+`#SET THE IP ADDRESS RANGE OF THE LOCATION TO BE REDIRECTED FOR LOCATION B`
+`geo $location_B`
+`{ default 0; 10.0.1.0/23 1;}`
+`# START LOG FORMATTING`
+`log_format upstream_time '$remote_addr - $remote_user [$time_local] ' '"$request" $status $body_bytes_sent ' '"$http_referer" "$http_user_agent"' 'rt=$request_time uct="$upstream_connect_time" uht="$upstream_header_time status="$upstream_cache_status" urt="$upstream_response_time"';`
+`# END LOG FORMATTING`
+`# START CACHING VARIABLES`
+`proxy_cache_path /usr/share/nginx/cache levels=1:2 keys_zone=hls-test1-cache:200m max_size=1000m inactive=600m;`
+`client_body_temp_path /spool 1 2;`
+`client_body_buffer_size 16k;`
+`# END CACHING VARIABLES`
 
-}
-
-# START HTTP BLOCK
-http {
-server_names_hash_bucket_size  128;
-include       mime.types;
-default_type  application/octet-stream;
-
-#SET THE IP ADDRESS RANGE OF THE LOCATION TO BE REDIRECTED FOR LOCATION A
-geo $location _A
-{ default 0; 10.0.0.0/24 1;}
-#SET THE IP ADDRESS RANGE OF THE LOCATION TO BE REDIRECTED FOR LOCATION B
-geo $location_B
-{ default 0; 10.0.1.0/23 1;}
-
-
-# START LOG FORMATTING
-log_format upstream_time '$remote_addr - $remote_user [$time_local] ' '"$request" $status $body_bytes_sent ' '"$http_referer" "$http_user_agent"' 'rt=$request_time uct="$upstream_connect_time" uht="$upstream_header_time status="$upstream_cache_status" urt="$upstream_response_time"';
-# END LOG FORMATTING
-
-
-# START CACHING VARIABLES
-proxy_cache_path /usr/share/nginx/cache levels=1:2 keys_zone=hls-test1-cache:200m max_size=1000m inactive=600m;
-client_body_temp_path /spool 1 2;
-client_body_buffer_size 16k;
-# END CACHING VARIABLES
-
-include /etc/nginx/conf.d/*.conf;
-}
-
-`
+`include /etc/nginx/conf.d/*.conf;`
+`}`
 
 ## Load Balancer
 The load balancer will proxy the connections to the back end servers.

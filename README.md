@@ -120,9 +120,12 @@ log_format upstream_time '$remote_addr - $remote_user [$time_local] ' '"$request
 upstream backend {
         #ip_hash;
         #least_conn;
+	#least_time last_byte;
+	least_time header;
         server 10.0.0.201:80 weight=100;
        	server 10.0.0.202:80 weight=100;
-		keepalive 64;
+	sticky cookie srv_id expires=1h domain=.example.com path=/;
+	keepalive 64;
 }
 # END UPSTREAM BACKEND VARIABLES
 include /etc/nginx/conf.d/*.conf;

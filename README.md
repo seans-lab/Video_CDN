@@ -15,6 +15,23 @@ For an on premise implementation of this solution, a streaming media server for 
 
 # Configuration Components
 
+## Considerations
+
+### CORS
+Cross Origin Resource Sharing (CORS)
+
+### Players
+
+JWPlayer, Video.js
+
+### CDN's
+
+Akamai, Cloudfront
+
+### Caching
+
+Headers
+
 ## Redirector
 The purpose of the redirector is to provide a central point to resolve requests for the video stream, live or on-demand, and redirect the session to the server allocated to serve content to the users IP range.
 

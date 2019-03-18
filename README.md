@@ -13,12 +13,18 @@ In order to achieve the delivery of live and VOD content from cloud service prov
 ## On Premise
 For an on premise implementation of this solution, a streaming media server for live streaming will need to be implemented and a cms or web server will need to be in place to deliver HLS adaptive VOD assets.
 
-# Configuration Components
+# Instance Configurations & Considerations
 
 ## Considerations
 
+### DNS Servers & Resolvers
+
+DNS Names, Relation to Cors
+
 ### CORS
 Cross Origin Resource Sharing (CORS)
+
+### File Extensions & Regex Matches
 
 ### Players
 
@@ -31,6 +37,8 @@ Akamai, Cloudfront
 ### Caching
 
 Headers
+
+# NGINX Instances
 
 ## Redirector
 The purpose of the redirector is to provide a central point to resolve requests for the video stream, live or on-demand, and redirect the session to the server allocated to serve content to the users IP range.
@@ -104,7 +112,7 @@ location ~* .(xml)$ {
 
 if ($location_A)
 {  
-return 301 http://<oad balancer host location A>$request_uri;
+return 301 http://<load balancer host location A>$request_uri;
 }
 if ($location_B)
 {  
@@ -262,25 +270,25 @@ location ~* .(m3u8)$ {
   
   #START TS VOD
 location ~* .(ts|trp)$ {
-		resolver 8.8.8.8;
+	resolver 8.8.8.8;
         proxy_pass $scheme://<VOD origin host>$uri$is_args$args;
        	proxy_cache hls-test1-cache;
         proxy_cache_valid 200 7d;
-		add_header X-Proxy-Cache $upstream_cache_status;
+	add_header X-Proxy-Cache $upstream_cache_status;
         add_header "Who did it hit?" "streaming VOD Cached M3U8 on Cache"; 
-		proxy_ignore_headers Cache-Control;
+	proxy_ignore_headers Cache-Control;
         #proxy_ignore_headers Set-Cookie;
-		proxy_ignore_headers "Expires";
-		proxy_hide_header "Expires"; 
-		proxy_hide_header "Cache-Control";
-		proxy_hide_header "Set-Cookie";
+	proxy_ignore_headers "Expires";
+	proxy_hide_header "Expires"; 
+	proxy_hide_header "Cache-Control";
+	proxy_hide_header "Set-Cookie";
 }
 location ~* .(aac)$ {
         resolver 8.8.8.8;
         proxy_pass $scheme://<VOD origin host>$uri$is_args$args;
        	proxy_cache hls-test1-cache;
         proxy_cache_valid 200 7d;
-		add_header X-Proxy-Cache $upstream_cache_status;
+	add_header X-Proxy-Cache $upstream_cache_status;
         add_header "Who did it hit?" "streaming VOD Cached M3U8 on Cache"; 
   }
 location ~* .(mp4)$ {
@@ -334,7 +342,7 @@ location ~* .(m3u8)$ {
 location ~* .(ts|trp)$ {
 		proxy_http_version 1.1;
         proxy_set_header Connection "";
-	    resolver 8.8.8.8;
+	resolver 8.8.8.8;
         proxy_pass $scheme://<live origin host>$uri$is_args$args;
         proxy_cache hls-test1-cache;
         proxy_cache_valid 200 1m;

@@ -20,8 +20,8 @@ The purpose of the redirector is to provide a central point to resolve requests 
 
 /etc/nginx/nginx.conf
 ```
-# STREAMING - Redirector V1.8
-worker_processes  2;
+# STREAMING - Redirector V2
+worker_processes  auto;
 worker_rlimit_nofile 30000;
 events {
     worker_connections  200000;

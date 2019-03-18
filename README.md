@@ -13,6 +13,12 @@ In order to achieve the delivery of live and VOD content from cloud service prov
 ## On Premise
 For an on premise implementation of this solution, a streaming media server for live streaming will need to be implemented and a cms or web server will need to be in place to deliver HLS adaptive VOD assets.
 
+# Diagram
+
+![alt text](https://github.com/SeaNGiNX/Video_CDN/blob/master/Video%20CDN.png?raw=true)
+
+## Data Flow
+
 # Instance Configurations & Considerations
 
 ## Considerations

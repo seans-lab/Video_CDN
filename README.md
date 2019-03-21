@@ -18,20 +18,19 @@ For an on premise implementation of this solution, a streaming media server for 
 ![alt text](https://github.com/SeaNGiNX/Video_CDN/blob/master/Video%20CDN.png?raw=true)
 
 ## Data Flow
-Black Line (1)
+1.Black Line
 The client request for the video content URL is managed by an internal DNS server which has a matching URL of the original video content origin server. The name is resolved to the Redirector Nginx instance which has been configured to map the appropriate Geo IP range of the clients with the appropriate load balancer to serve content to the client. 
 
-Purple Line (2)
+2.Purple Line
 The redirector returns a 302 with the appropriate URL of the load balancer allocated to the IP range specified in the Map in the Nginx configuration.
 
-Blue Line (3)
+3.Blue Line
 The client now requests the media content from the Load balancer URL specified in the mapping configuration on the redirector. The load balancer will balance the request to the cluster in the backend to try and retrieve the contect from the caching servers. If the cache has not yet recieved the content fro the origin, then the request will be made to the upstream origin server, or in a cascading proxy environment, from the upstream proxy.
 
-Red Line (4)
-The content is then returned from the origin and delivered to the cache for the specified ttl in the caching configuration. VOD content can be cached for extended periods of time however live video streaming content has a short lifespan in the cache and should remain cached for shorter periods. reecommended 6 x the duration of the video chunk. The m3u8 manifest file however, should be cached for a shorter period than the sixe of the video chunk as the player will refer to the video chunks listed in the manifest file which will result in the previous chunk replaying. The first hit client will receive the traffic and the caching servers will now be delivering HIT's on the content from the cache.
+4.Red Line
+The content is then returned from the origin and delivered to the cache for the specified ttl in the caching configuration. VOD content can be cached for extended periods of time however live video streaming content has a short lifespan in the cache and should remain cached for shorter periods. As a guide it is recommended 6 x the duration of the video chunk. The m3u8 manifest file however, should be cached for a shorter period than the sixe of the video chunk as the player will refer to the video chunks listed in the manifest file which will result in the previous chunk replaying. The first hit client will receive the traffic and the caching servers will now be delivering HIT's on the content from the cache.
 
-Green Line (5)
-
+5.Green Line (5)
 Subsequent requests for the video content will be delivered via the cache.
 
 

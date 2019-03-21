@@ -51,6 +51,10 @@ Cross Origin Resource Sharing (CORS) is an important element to consider and con
 
 The utilisation of regex for file extensions on the caching servers are important to ensure the appropriate caching parameters are correct for the content. Additional audio tracks may need to be identified in the configuration for simulcast video content and will need to be introduces if added to the content. This includes files such as aac or mp3 audio files. 
 
+# Demonstration Setup
+
+Notes to follow
+
 # NGINX Instances
 
 ## Redirector
